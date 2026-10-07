@@ -1,0 +1,13 @@
+## IDF Component Manager Manifest File
+dependencies:
+  espressif/esp_sccb_intf: "^0.0.3"
+  espressif/esp_video: "^0.5.1"
+  # 0.5.4+ dropped esp_driver_gpio from this component's REQUIRES, which
+  # breaks ov5647.c (driver/gpio.h) on IDF v6; 0.5.3 is the vendor-pinned,
+  # working version.
+  espressif/esp_cam_sensor: "0.5.3"
+  espressif/esp_hosted: "2.12.9"
+  espressif/esp_wifi_remote: "*"
+  ## Required IDF version
+  idf:
+    version: ">=4.1.0"
