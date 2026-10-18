@@ -38,6 +38,24 @@ Touch-driven voice recorder on the 3.5" WKS35HV035-WCT MIPI-DSI touch display:
 - The es8311 managed component also needs `esp_driver_gpio` added to its
   CMakeLists `REQUIRES` on IDF v6 (same regression class as `esp_cam_sensor`).
 
+## Volume tuning (measured on hardware)
+
+The initial port played back much too quietly. Current settings, all in
+`components/BSP/MYES8311/myes8311.c` and `main.c`:
+
+| Stage | Setting | Value |
+|-------|---------|-------|
+| ES8311 DAC output | `esp_codec_dev_set_out_vol` | **100** (0 dB attenuation — max analog level into the NS4150B) |
+| ES8311 mic boost | `esp_codec_dev_set_in_gain` | **32 dB** (sensor max — applies to new recordings) |
+| Recording buffer | peak normalization after capture | uniform gain to ≈ −0.8 dBFS peak, capped at 8× (+18 dB) so near-silence is not amplified into hiss |
+
+Peak normalization (`normalize_recording()` in `main.c`) is the only digital
+gain in the chain — uniform, no dynamic processing, so it does not distort
+sound character; it just uses whatever headroom the recording left. The
+applied factor is logged on the console after each recording. Raising the
+30000 target toward 32767 squeezes out the last bit of loudness at the cost
+of clipping risk on loud peaks.
+
 ## Vendor sources
 
 - `25_recoding` — I2S/ES8311 BSP, I2S RX record path

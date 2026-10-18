@@ -51,6 +51,31 @@ The BSP selects panels at compile time via the `MIPILCD_*` macros in
 `components/BSP/LCD/mipi_lcd.h` — exactly one must be 1. Currently the 3.5"
 ST7796U is selected.
 
+## Telling multiple OV5647 modules apart
+
+There is **no unique per-chip ID** readable from an OV5647: the identification
+registers (`0x300A/0x300B`) return the same part number `0x5647` (plus a
+revision byte) on *every* OV5647 die, so two modules cannot be told apart by
+chip ID — even though the camera driver logs `PID=0x5647` at init.
+
+Practical per-module identification instead uses per-die/per-optics
+differences, measurable with this app's `/capture` endpoint (or the LCD):
+
+1. **Dead/hot pixel map** — the most deterministic fingerprint. Cap the lens
+   (or point at darkness), capture ~10 frames per module, and compare bright
+   specks: each die has its own defect positions. Use `board_server`'s
+   `/capture` for raw single frames.
+2. **Black level** — mean pixel value of lens-capped frames (sensor dark
+   offset differs slightly per die).
+3. **Optics fingerprint** (since the modules have different lenses): sharpness
+   profile across a test chart, field of view, distortion, and IR-filter tint
+   under an IR light — the lens, not the chip, is what differs.
+4. **Label/assembly** — the FPC flex often carries a date/batch code; pair it
+   with the capture evidence above and label the modules physically.
+
+If a module reports `PID != 0x5647` at init, it is not an OV5647 die (clone
+or different part) — the init log makes that immediately visible.
+
 ## Known workaround: esp_cam_sensor patch
 
 `esp_cam_sensor` (0.5.3, same as the vendor pins) misses `esp_driver_gpio`

@@ -283,6 +283,31 @@ Dhrystone 2.1 benchmark ported from RP2040, running on ESP32-C3 at 160 MHz. Prin
 
 ## Building
 
+Every shell needs the ESP-IDF environment activated before `idf.py` works.
+On Windows, use the repo's activator (note the leading dot, which keeps the
+environment in the current shell):
+
+```powershell
+. D:\esp32-demo\env.ps1
+```
+
+`env.ps1` sets `IDF_PATH`, prepends the toolchain/cmake/ninja paths, and
+pins `IDF_PYTHON_ENV_PATH` to the installed `idf6.0_py3.13_env` — necessary
+because the export scripts otherwise *guess* the venv name from a Python
+version (`idf6.0_py3.11_env` in PowerShell) and fail; Git Bash additionally
+refuses MSYS/MinGW shells by design, so use PowerShell on Windows. Bare
+`ninja` from a `build/` directory is not supported for the same reason (no
+`IDF_PATH` → CMake re-regeneration fails with `/tools/cmake/project.cmake
+not found`).
+
+After activation, build/flash from any app directory:
+
+```bash
+cd p4-cb-v3_2\app\ov5647_lcd_preview
+idf.py build
+idf.py -p COM34 flash monitor
+```
+
 Build manually with `idf.py build`, or use the auto-detect flash script:
 
 ```bash

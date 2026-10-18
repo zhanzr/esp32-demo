@@ -100,12 +100,12 @@ uint8_t myes8311_init(void)
     }
 
     /* 设置初始音量和增益 */
-    if (esp_codec_dev_set_out_vol(codec_handle, EXAMPLE_VOICE_VOLUME) != ESP_CODEC_DEV_OK) { /* 设置输出音量 */
+    if (esp_codec_dev_set_out_vol(codec_handle, 100) != ESP_CODEC_DEV_OK) { /* 设置输出音量 */
         ESP_LOGE(es8311_tag, "set output volume failed"); /* 设置输出音量失败 */
         return ESP_FAIL;
     }
 
-	if (esp_codec_dev_set_in_gain(codec_handle, 30) != ESP_CODEC_DEV_OK) {
+	if (esp_codec_dev_set_in_gain(codec_handle, 32) != ESP_CODEC_DEV_OK) {
         ESP_LOGE(es8311_tag, "set input gain failed");
         return ESP_FAIL;
     }

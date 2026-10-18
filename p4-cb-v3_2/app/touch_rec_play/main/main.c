@@ -114,6 +114,8 @@ static void draw_initial(void)
 
 /* ------------------------------ record / play ----------------------------- */
 
+static void normalize_recording(void);
+
 static void do_record(void)
 {
     status_text("recording...", RED);
@@ -131,6 +133,41 @@ static void do_record(void)
     }
     i2s_trx_stop();
     ESP_LOGI(TAG, "recorded %lu bytes in 10 s", (unsigned long)got);
+    normalize_recording();
+}
+
+/* Peak-normalize the recording so playback is as loud as possible without
+ * clipping: uniform gain, no dynamic processing, no quality loss. The gain
+ * is capped at 8x (+18 dB) so near-silence is not amplified into hiss. */
+static void normalize_recording(void)
+{
+    const uint32_t n = REC_TOTAL / 2;
+    int32_t peak = 0;
+    for (uint32_t i = 0; i < n; i++) {
+        int32_t s = s_rec_buf[i];
+        if (s < 0) s = -s;
+        if (s > peak) peak = s;
+    }
+    if (peak < 100) {                     /* essentially silence */
+        ESP_LOGW(TAG, "normalize: recording is silence, skipped");
+        return;
+    }
+
+    /* target peak ~30000 (~-0.8 dBFS), gain capped at 8x */
+    float gain = 30000.0f / (float)peak;
+    if (gain > 8.0f) gain = 8.0f;
+    if (gain <= 1.0f) {
+        ESP_LOGI(TAG, "normalize: peak %ld already at full scale", (long)peak);
+        return;
+    }
+
+    for (uint32_t i = 0; i < n; i++) {
+        int32_t v = (int32_t)(s_rec_buf[i] * gain);
+        if (v > 32767) v = 32767;
+        if (v < -32768) v = -32768;
+        s_rec_buf[i] = (int16_t)v;
+    }
+    ESP_LOGI(TAG, "normalize: peak %ld, applied %.2fx gain", (long)peak, gain);
 }
 
 static void do_play(void)
